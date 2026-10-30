@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>GetAnywhere — Buy & Sell with Escrow</title>
+  <link rel="stylesheet" href="assets/styles.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="nav">
+    <div class="brand" onclick="Router.go('/home')" style="cursor:pointer">
+      <div class="logo"></div>
+      <div>GetAnywhere</div>
+      <span class="badge">Beta Prototype</span>
+    </div>
+    <div class="row hide-on-mobile" id="global-search-wrap">
+      <div class="searchbar">
+        <input id="global-search" placeholder="Search products… (Press Enter)"/>
+        <select id="global-filter-category" class="select"></select>
+        <button class="cta" onclick="UI.triggerGlobalSearch()">Search</button>
+      </div>
+    </div>
+    <div class="row">
+      <button class="ghost" onclick="Router.go('/sell')">Sell</button>
+      <button class="ghost" onclick="Router.go('/tickets')">Tickets</button>
+      <button class="ghost" onclick="Router.go('/admin')">Admin</button>
+      <div id="user-chip" class="user-chip hidden"></div>
+      <button id="login-btn" class="cta" onclick="Router.go('/login')">Login</button>
+      <button id="logout-btn" class="ghost hidden" onclick="Auth.logout()">Logout</button>
+    </div>
+  </header>
+
+  <main id="app" class="container"></main>
+
+  <footer class="container">
+    <div class="row">
+      <div>© <span id="year"></span> GetAnywhere — A marketplace with built‑in escrow.</div>
+      <div class="space"></div>
+      <div class="row">
+        <span class="muted">Theme</span>
+        <label class="switch">
+          <input type="checkbox" id="theme-toggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </footer>
+
+  <!-- TEMPLATES -->
+  <template id="tpl-login">
+    <section class="auth">
+      <div class="card stack center auth-card">
+        <h1 class="h1">Welcome to GetAnywhere</h1>
+        <p class="muted">Buy & sell safely with auto‑middleman escrow. Create your account to continue.</p>
+        <div class="form">
+          <input id="login-email" class="input" placeholder="Email"/>
+          <input id="login-pass" class="input" type="password" placeholder="Password"/>
+          <button class="cta" onclick="Auth.loginEmail()">Login</button>
+        </div>
+        <div class="divider"><span>or</span></div>
+        <button class="google-btn" onclick="Auth.loginGoogleMock()">
+          <img src="assets/google.svg" alt="Google"/><span>Continue with Google</span>
+        </button>
+        <div class="muted small">No account? <a href="#" onclick="UI.toggleAuthMode()">Create one</a></div>
+        <div class="signup hidden">
+          <div class="form">
+            <input id="signup-name" class="input" placeholder="Full name"/>
+            <input id="signup-email" class="input" placeholder="Email"/>
+            <input id="signup-pass" class="input" type="password" placeholder="Password"/>
+            <input id="signup-pass2" class="input" type="password" placeholder="Confirm password"/>
+            <button class="cta" onclick="Auth.signup()">Create account</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-home">
+    <section class="hero">
+      <div>
+        <div class="h1">Find anything. Pay safely. <span class="grad">GetAnywhere.</span></div>
+        <p>Discover great deals with complete buyer–seller privacy and staff‑managed escrow.</p>
+        <div class="center-row show-on-mobile">
+          <div class="searchbar">
+            <input id="m-search" placeholder="Search products…"/>
+            <select id="m-filter-category" class="select"></select>
+            <button class="cta" onclick="UI.triggerMobileSearch()">Search</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card pad col-12">
+        <div class="carousel" id="carousel"></div>
+      </div>
+
+      <div class="card pad col-3">
+        <h3>Categories</h3>
+        <div id="cat-list" class="stack"></div>
+      </div>
+
+      <div class="col-9">
+        <div class="row card pad" style="margin-bottom:16px">
+          <strong>Results</strong>
+          <div class="space"></div>
+          <span class="muted" id="result-count"></span>
+          <select id="sort-select" class="select" onchange="UI.sortProducts(this.value)">
+            <option value="recom">Sort: Recommended</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="rating-desc">Rating: High to Low</option>
+            <option value="newest">Newest</option>
+          </select>
+        </div>
+        <div id="product-grid" class="grid"></div>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-sell">
+    <section class="card pad">
+      <h2>Add a product</h2>
+      <p class="muted small">Your phone, address and contact stay private; staff will handle the buyer.</p>
+      <div class="form two-col">
+        <input id="p-title" class="input" placeholder="Product name *"/>
+        <input id="p-price" class="input" type="number" placeholder="Price (₹) *"/>
+        <select id="p-category" class="select"></select>
+        <input id="p-qty" class="input" type="number" min="1" value="1" placeholder="Quantity *"/>
+        <textarea id="p-desc" class="textarea" placeholder="Description *"></textarea>
+        <input id="p-images" class="file" type="file" accept="image/*" multiple/>
+        <input id="p-phone" class="input" placeholder="Phone (private) *"/>
+        <input id="p-address" class="input" placeholder="Address (private) *"/>
+        <button class="cta" onclick="Products.add()">Publish</button>
+      </div>
+    </section>
+
+    <section class="card pad" style="margin-top:18px">
+      <h3>Your listings</h3>
+      <div id="my-products" class="grid"></div>
+    </section>
+  </template>
+
+  <template id="tpl-product">
+    <section class="grid">
+      <div class="card col-6">
+        <div class="detail-image" id="detail-images"></div>
+      </div>
+      <div class="card pad col-6">
+        <h2 id="d-title"></h2>
+        <div class="row"><div class="stars" id="d-stars"></div><span id="d-rating" class="muted"></span></div>
+        <div class="price" id="d-price"></div>
+        <div class="muted" id="d-cat"></div>
+        <p id="d-desc"></p>
+        <div class="row">
+          <button class="cta" onclick="Escrow.buyNow()">Buy Now</button>
+          <button class="ghost" onclick="Router.go('/home')">Back</button>
+        </div>
+      </div>
+    </section>
+    <section class="card pad" style="margin-top:18px">
+      <h3>Reviews</h3>
+      <div id="reviews"></div>
+      <div id="review-form" class="form" style="margin-top:12px">
+        <select id="rev-stars" class="select">
+          <option value="5">★★★★★ (5)</option>
+          <option value="4">★★★★☆ (4)</option>
+          <option value="3">★★★☆☆ (3)</option>
+          <option value="2">★★☆☆☆ (2)</option>
+          <option value="1">★☆☆☆☆ (1)</option>
+        </select>
+        <input id="rev-text" class="input" placeholder="Write a review…"/>
+        <button class="ghost" onclick="Products.addReview()">Submit</button>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-tickets">
+    <section class="grid">
+      <div class="card pad col-3">
+        <h3>Your Tickets</h3>
+        <button class="cta" onclick="Tickets.createSupportTicket()">Create New Support Ticket</button>
+        <div id="ticket-list"></div>
+      </div>
+      <div class="card pad col-9">
+        <div id="ticket-room">
+          <div class="muted">Select a ticket to chat with staff.</div>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-admin">
+    <section class="stack">
+      <div class="row">
+        <h2>Admin Panel</h2><span class="badge">Full Access</span>
+        <div class="space"></div>
+    </section>
+
+
+        <button class="ghost" onclick="Admin.seed()">Seed Demo Data</button>
+        <button class="ghost" onclick="Admin.export()">Export JSON</button>
+        <button class="ghost" onclick="Admin.reset()">Factory Reset</button>
+      </div>
+
+      <div class="tabs row">
+        <button class="ghost active admin-tab-button" data-tab="users" onclick="UI.switchTab(this)">Users</button>
+        <button class="ghost admin-tab-button" data-tab="products" onclick="UI.switchTab(this)">Products</button>
+        <button class="ghost admin-tab-button" data-tab="tickets" onclick="UI.switchTab(this)">Tickets</button>
+        <button class="ghost admin-tab-button" data-tab="categories" onclick="UI.switchTab(this)">Categories</button>
+        <button class="ghost admin-tab-button" data-tab="settings" onclick="UI.switchTab(this)">Settings</button>
+      </div>
+
+      <div id="tab-users" class="card pad">
+        <table class="table">
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th></th></tr></thead>
+          <tbody id="admin-users"></tbody>
+        </table>
+      </div>
+
+      <div id="tab-products" class="card pad hidden">
+        <table class="table">
+          <thead><tr><th>Title</th><th>Seller</th><th>Price</th><th>Category</th><th>Status</th><th></th></tr></thead>
+          <tbody id="admin-products"></tbody>
+        </table>
+      </div>
+
+      <div id="tab-tickets" class="card pad hidden">
+        <table class="table">
+          <thead><tr><th>#</th><th>Product</th><th>Buyer</th><th>Seller</th><th>State</th><th>Actions</th></tr></thead>
+          <tbody id="admin-tickets"></tbody>
+        </table>
+      </div>
+
+      <div id="tab-categories" class="card pad hidden">
+        <div class="row">
+          <input id="cat-new" class="input" placeholder="Add category"/>
+          <button class="ghost" onclick="Admin.addCategory()">Add</button>
+        </div>
+        <div id="admin-cats" class="chips"></div>
+      </div>
+
+      <div id="tab-settings" class="card pad hidden">
+        <h3>Escrow Settings</h3>
+        <div class="form two-col">
+          <input id="fee-percent" class="input" type="number" value="5" /> 
+          <label class="muted small">Platform fee % (deducted on release)</label>
+          <input id="min-release" class="input" type="number" value="1"/>
+          <label class="muted small">Min hours before auto-release</label>
+          <button class="cta" onclick="Admin.saveSettings()">Save</button>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
